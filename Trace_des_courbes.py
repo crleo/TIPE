@@ -1,63 +1,103 @@
+##Tracé des courbes (avec paramètres)
 import numpy as np
 import matplotlib.pyplot as plt
 plt.close()
 
-def vitesse_angulaire_r(t,T_2):
-    return -12.39*T_2*t + 150
+#initialisation des valeurs
 
-def vitesse_angulaire_NG(t,T_2):
-    return (387*T_2 - 838)*t
+pi = np.pi
+f = 0.12
+Jd = 5e-4
+T_2 = 5
+R = 1.17e-2
+w0 = 150
+m = 247e-3
 
-##tracé d'une seule courbe a T_2 fixé
+#définition des fonctions
 
-t = [0.12*i for i in range(25)]
-w = [vitesse_angulaire_r(i,2.3) for i in t]
-w_ng = [vitesse_angulaire_NG(i,2.3) for i in t]
+def V_Ang_G(t ,T2 , fd , J ):
+    return (R*(T2/J)*(np.exp(-2*pi*fd)-1))*t + w0
 
-plt.figure("0")
-plt.plot(t,w)
-plt.plot(t,w_ng)
+def V_Ang_NG(t , T2 , fd , J ):
+    return (-9.81/R + (T2/(R*m))*(np.exp(2*pi*fd)-1))*t
 
-##intersections de vitesses
-def intersection(T_2):
-    T = 150*(1/(T_2*399 - 838))
-    return vitesse_angulaire_r(T,T_2)
+def temps_glissement( T2 , fd , J , w ):
+    return w*(1/((-9.81/R) + (T2/(R*m))*(np.exp(2*pi*fd)-1) + R*(T2/J)*(1-np.exp(-2*pi*fd))))
 
-def intersectionbis(T_2):
-    T = 150*(1/(T_2*399 - 838))
-    return vitesse_angulaire_NG(T,T_2)
+#initialisation des listes de valeurs
 
-def intersection_tau(T_2):
-    T = 150*(1/(T_2*399 - 838))
-    return T
+lst_t = [0.12*i for i in range(25)]
+lst_T2 = [2.16 + i*0.025 for i in range(125)] #tracés à T2 variable
+lst_w = [100 + i*0.25 for i in range(400)] #tracés à w variable
+lst_f = [0.078 + i*0.0025 for i in range(750)] # influence de f
+lst_J = [4e-4 + i*5e-7 for i in range(400)]
 
-lst_T_2 = [2.16 + i*0.025 for i in range(75)]
+#création des listes des tracés
 
-intersect_lst = [intersection(i) for i in lst_T_2]
-intersect_lstbis = [intersectionbis(i) for i in lst_T_2]
+C1 = [V_Ang_G(i,T_2,f,Jd) for i in lst_t] #courbe à T2 fixé : visualisation de la zone de glissement
+C1bis = [V_Ang_NG(i,T_2,f,Jd) for i in lst_t]
 
-lst_Tmin = [2.16 + i*0.005 for i in range(500)]
-intersection_lst = [intersection(i) for i in lst_Tmin]
+C2 = [temps_glissement( i , f , Jd ,w0) for i in lst_T2] #courbe à T2 variable : durée de glissement en fonction de T2
 
-plt.figure("01")
-plt.plot(lst_T_2,intersect_lst,color="green")
-plt.savefig("trace_des_courbes1.png")
+C3 = [temps_glissement( T_2 , f , Jd , i) for i in lst_w] #courbe à w variable : durée de glissement en fonction de w
 
-plt.figure("02")
-plt.plot(lst_T_2,intersect_lstbis,color="red")
-plt.savefig("trace_des_courbes2.png")
+C4 = [temps_glissement( T_2 , i , Jd , w0 ) for i in lst_f]
 
-plt.figure("03")
-plt.plot(lst_Tmin,intersection_lst,color="purple")
-plt.savefig("trace_des_courbes3.png")
+C5 = [V_Ang_G(i,T_2,0.06,Jd) for i in lst_t]
+C5bis = [V_Ang_NG(i,T_2,0.06,Jd) for i in lst_t]
 
-plt.figure("4")
-plt.plot(lst_T_2,intersect_lstbis,color="red")
-plt.plot(lst_T_2,intersect_lst,color="green")
-plt.savefig("trace_des_courbes4.png")
+C6 = [temps_glissement( T_2 , f , i , w0 ) for i in lst_J]
 
-plt.figure("5")
-lst_Tmin2 = [2.16 + i*0.05 for i in range(100)]
-intersect_tau = [intersection_tau(i) for i in lst_Tmin2]
-plt.plot(lst_Tmin2,intersect_tau,color="blue")
-plt.savefig("trace_des_courbes5.png")
+C7 = [temps_glissement( i , 0.12 , Jd ,w0) for i in lst_T2]
+C7bis = [temps_glissement( i , 0.13 , Jd ,w0) for i in lst_T2]
+C7tierce = [temps_glissement( i , 0.14 , Jd ,w0) for i in lst_T2]
+
+#tracés
+
+plt.figure("visualisation de la zone de glissement")
+plt.xlabel("Vitesses angulaire (réelle et théorique) (rad.s-1)")
+plt.ylabel("temps (s)")
+plt.plot(lst_t,C1,color ='red' )
+plt.plot(lst_t,C1bis,color ='purple')
+plt.savefig("fig_1.png")
+
+plt.figure("durée de glissement en fonction de T2")
+plt.xlabel("tension appliquée (N)")
+plt.ylabel("durée de glissement (s)")
+plt.plot(lst_T2,C2)
+plt.savefig("fig_2.png")
+
+plt.figure("durée de glissement en fonction de w")
+plt.xlabel("vitesse angulaire (rad.s-1)")
+plt.ylabel("durée de glissement (s)")
+plt.plot(lst_w,C3)
+plt.savefig("fig_3.png")
+
+plt.figure("durée de glissement en fontion de f")
+plt.xlabel("valeur de f")
+plt.ylabel("durée de glissement (s)")
+plt.plot(lst_f,C4)
+plt.savefig("fig_4.png")
+
+plt.figure("visualisation de la zone de glissement en fonction de f")
+plt.xlabel("t (s)")
+plt.ylabel("v/R et w (rad/s) ")
+plt.plot(lst_t,C5,color = 'red')
+plt.plot(lst_t,C5bis,color = 'purple')
+plt.savefig("fig_5.png")
+
+plt.figure("durée de glissement en fontion de J")
+plt.xlabel("valeur de J")
+plt.ylabel("durée de glissement (s)")
+plt.plot(lst_J,C6)
+plt.savefig("fig_6.png")
+
+plt.figure("comparaison valeurs de f pour la durée en fonction de T2")
+plt.xlabel("tension appliquée (N)")
+plt.ylabel("durée de glissement (s)")
+plt.plot(lst_T2,C7,color = 'red')
+plt.plot(lst_T2,C7bis,color = 'blue')
+plt.plot(lst_T2,C7tierce,color = 'purple')
+plt.savefig("fig_7.png")
+
+plt.show()
